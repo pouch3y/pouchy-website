@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>POUCHY Checkout</title>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h1 {
+      color: #3c2415;
+      text-align: center;
+    }
+    
+    #payment-form {
+      background: #f5f0e6;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    
+    #card-element {
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: white;
+      margin-bottom: 20px;
+      min-height: 40px;
+    }
+    
+    #card-errors {
+      color: #c8973f;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      background: #c8973f;
+      color: white;
+      border: none;
+      padding: 12px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    
+    button:hover {
+      background: #b1832c;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    #payment-message {
+      color: #c8973f;
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .card-container {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 12px;
+      background: white;
+      margin-bottom: 20px;
+    }
+    
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+
+    .toast {
+      background-color: #3c2415;
+      color: #f5f0e6;
+      padding: 12px 20px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      min-width: 250px;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: #f5f0e6;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    /* Products container */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+    
+    .product-card {
+      background-color: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(60,36,21,0.08);
+      transition: transform 0.3s, box-shadow 0.3s;
+      border: 1px solid #e6dbc9;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(60,36,21,0.12);
+    }
+    
+    .product-img {
+      height: 200px;
+      background-color: #f5f0e6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .product-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .product-content {
+      padding: 25px;
+    }
+    
+    .product-content h3 {
+      margin-bottom: 10px;
+      color: #3c2415;
+      font-weight: 600;
+      font-size: 1.4rem;
+    }
+    
+    .product-content p {
+      color: #6d584a;
+      margin-bottom: 15px;
+      font-weight: 400;
+      font-size: 1.1rem;
+    }
+    
+    .cart-btn {
+      position: relative;
+      background: none;
+      border: none;
+      color: #3c2415;
+      font-size: 1.3rem;
+      cursor: pointer;
+      margin-left: 20px;
+    }
+
+    .cart-count {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background-color: #c8973f;
+      color: white;
+      font-size: 0.7rem;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+<!-- Navigation with cart button -->
+<div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+<button class="cart-btn" id="cart-btn">
+<i class="fa fa-shopping-cart"></i>
+<span class="cart-count" id="cart-count">0</span>
+</button>
+</div>
+<h1>POUCHY Checkout</h1>
+<!-- Product listing section -->
+<section class="shop">
+<div class="container">
+<h2>OUR COLLECTION</h2>
+<div class="products-grid" id="products-container">
+<!-- Products will be dynamically loaded here -->
+</div>
+</div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize Stripe
+      const stripe = Stripe("pk_live_51RD6KiFtU1CdZnebtPujAClOQwn1AUkqVVC1vygOgseRbrHuaeBHVjXporIzFIAb8NxOgmznYIsC6Kk4f0ZlVNMi00pJF9pDu9");
+      
+      // Create an instance of Elements
+      const elements = stripe.elements();
+      
+      // Create an instance of the card Element
+      
+      // Add an instance of the card Element into the `card-element` div
+      
+      // Handle real-time validation errors from the card Element
+        const displayError = document.getElementById('card-errors');
+        if (event.error) {
+          displayError.textContent = event.error.message;
+        } else {
+          displayError.textContent = '';
+        }
+      });
+      
+      // Handle form submission
+      form.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const submitButton = document.getElementById('submitBtn');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Processing...';
+        
+        const name = document.getElementById('name').value;
+        const email = document.getElementById('email').value;
+        
+        try {
+          // Create payment intent on the server
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              amount: 12.99, 
+              name, 
+              email 
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          
+          const data = await response.json();
+          
+          // Confirm card payment
+            payment_method: {
+              billing_details: {
+                name,
+                email
+              }
+            }
+          });
+          
+          if (result.error) {
+            // Show error to your customer
+            const messageElement = document.getElementById('payment-message');
+            messageElement.textContent = result.error.message;
+            messageElement.classList.remove('hidden');
+            
+            submitButton.disabled = false;
+            submitButton.textContent = 'Complete Order';
+          } else {
+            // The payment succeeded!
+            window.location.href = '/order-confirmation.html';
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          
+          const messageElement = document.getElementById('payment-message');
+          messageElement.textContent = 'An error occurred. Please try again.';
+          messageElement.classList.remove('hidden');
+          
+          submitButton.disabled = false;
+          submitButton.textContent = 'Complete Order';
+        }
+      });
+    });
+  </script>
+<script>
+    // Products and cart functionality
+    let cart = [];
+
+    async function fetchProducts() {
+      try {
+        const response = await fetch('/api/products');
+        const products = await response.json();
+        
+        // Render products to the page
+        const productsContainer = document.getElementById('products-container');
+        if (!productsContainer) {
+          console.error('Products container not found');
+          return;
+        }
+        
+        productsContainer.innerHTML = '';
+        
+        products.forEach(product => {
+          const productElement = document.createElement('div');
+          productElement.className = 'product-card';
+          productElement.innerHTML = `
+            <div class="product-img">
+              <img src="${product.imageUrl || '/api/placeholder/250/200'}" alt="${product.name}">
+            </div>
+            <div class="product-content">
+              <h3>${product.name}</h3>
+              <p>${product.description}</p>
+              <span class="price">£${product.price.toFixed(2)}</span>
+              <button class="btn" onclick="addToCart('${product._id}', '${product.name}', ${product.price})">Add to Cart</button>
+            </div>
+          `;
+          
+          productsContainer.appendChild(productElement);
+        });
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    }
+
+    function addToCart(id, name, price) {
+      // Check if product is already in cart
+      const existingItem = cart.find(item => item.id === id);
+      
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({ id, name, price, quantity: 1 });
+      }
+      
+      // Show toast notification
+      showToast(`${name} added to cart!`);
+      
+      // Update cart display
+      updateCartCount();
+    }
+
+    function updateCartCount() {
+      const cartCount = document.getElementById('cart-count');
+      if (cartCount) {
+        const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+        cartCount.textContent = totalItems;
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+      `;
+      
+      // Add toast to page
+      const toastContainer = document.getElementById('toast-container');
+      if (!toastContainer) {
+        const newToastContainer = document.createElement('div');
+        newToastContainer.id = 'toast-container';
+        newToastContainer.className = 'toast-container';
+        document.body.appendChild(newToastContainer);
+        newToastContainer.appendChild(toast);
+      } else {
+        toastContainer.appendChild(toast);
+      }
+      
+      // Remove toast after 3 seconds
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.remove();
+        }
+      }, 3000);
+    }
+
+    // Call this function when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      // Only fetch products if we're on the shop page
+      const productsContainer = document.getElementById('products-container');
+      if (productsContainer) {
+        fetchProducts();
+      }
+      
+      // Initialize cart count
+      updateCartCount();
+    });
+
+    // Make functions available globally
+    window.addToCart = addToCart;
+    window.showToast = showToast;
+    window.fetchProducts = fetchProducts;
+  </script>
+<!-- Add Font Awesome for cart icon -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"/>
+</body>
+</html>

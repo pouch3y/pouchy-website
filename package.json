@@ -1,0 +1,27 @@
+{
+  "name": "pouchy-server",
+  "version": "1.0.0",
+  "main": "index.js",
+ "scripts": {
+  "dev": "next dev",
+  "build": "echo 'No build step required'",
+  "start": "next start",
+  "test": "echo \"Error: no test specified\" && exit 1"
+},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "micro": "^10.0.1",
+    "mongodb": "3.7",
+    "mongoose": "^8.13.2",
+    "nodemailer": "^6.10.1",
+    "raw-body": "^3.0.0",
+    "stripe": "^18.0.0"
+  },
+  "description": ""
+}
